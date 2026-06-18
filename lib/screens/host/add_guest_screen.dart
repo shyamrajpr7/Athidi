@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:athidhi/constants/app_colors.dart';
+import 'package:athidhi/models/guest_model.dart';
+import 'package:athidhi/providers/guest_provider.dart';
+import 'package:athidhi/providers/language_provider.dart';
 
 class AddGuestScreen extends StatefulWidget {
-  final bool isMalayalam;
-  const AddGuestScreen({super.key, required this.isMalayalam});
+  const AddGuestScreen({super.key});
 
   @override
   State<AddGuestScreen> createState() => _AddGuestScreenState();
@@ -14,6 +18,7 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
   final _phoneController = TextEditingController();
   String _selectedGroup = 'Friends';
   int _attendingCount = 1;
+  bool _isSaving = false;
 
   final List<String> _groups = [
     'Close Family',
@@ -25,6 +30,8 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -32,7 +39,7 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          widget.isMalayalam ? 'അതിഥിയെ ചേർക്കുക' : 'Add Guest',
+          lang.t('അതിഥിയെ ചേർക്കുക', 'Add Guest'),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -41,25 +48,24 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel(widget.isMalayalam ? 'പേര്' : 'Full Name'),
-            _buildInput(_nameController,
-                widget.isMalayalam ? 'പേര് നൽകുക' : 'Enter full name'),
+            _buildLabel(lang.t('പേര്', 'Full Name')),
+            _buildInput(
+                _nameController, lang.t('പേര് നൽകുക', 'Enter full name')),
             const SizedBox(height: 16),
-            _buildLabel(widget.isMalayalam ? 'ഫോൺ നമ്പർ' : 'Phone Number'),
+            _buildLabel(lang.t('ഫോൺ നമ്പർ', 'Phone Number')),
             _buildInput(_phoneController, '9876543210',
                 type: TextInputType.phone),
             const SizedBox(height: 16),
-            _buildLabel(widget.isMalayalam ? 'ഗ്രൂപ്പ്' : 'Group'),
+            _buildLabel(lang.t('ഗ്രൂപ്പ്', 'Group')),
             _buildGroupSelector(),
             const SizedBox(height: 16),
-            _buildLabel(
-                widget.isMalayalam ? 'വരുന്നവരുടെ എണ്ണം' : 'Attending Count'),
+            _buildLabel(lang.t('വരുന്നവരുടെ എണ്ണം', 'Attending Count')),
             _buildCountSelector(),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _handleSave,
+                onPressed: _isSaving ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -69,11 +75,18 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  widget.isMalayalam ? 'സേവ് ചെയ്യുക' : 'Save Guest',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        lang.t('സേവ് ചെയ്യുക', 'Save Guest'),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
               ),
             ),
           ],
@@ -155,9 +168,7 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            if (_attendingCount > 1) {
-              setState(() => _attendingCount--);
-            }
+            if (_attendingCount > 1) setState(() => _attendingCount--);
           },
           child: Container(
             width: 40,
@@ -196,27 +207,50 @@ class _AddGuestScreenState extends State<AddGuestScreen> {
     );
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     if (_nameController.text.isEmpty || _phoneController.text.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.isMalayalam
-              ? 'ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക'
-              : 'Please fill all details correctly'),
-          backgroundColor: AppColors.primary,
+          content: Text(
+            context.read<LanguageProvider>().t(
+                  'ദയവായി എല്ലാ വിവരങ്ങളും ശരിയായി നൽകുക',
+                  'Please fill all details correctly',
+                ),
+          ),
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(widget.isMalayalam
-            ? '${_nameController.text} ചേർത്തു!'
-            : '${_nameController.text} added!'),
-        backgroundColor: AppColors.green,
-      ),
+
+    setState(() => _isSaving = true);
+
+    final guest = Guest(
+      id: const Uuid().v4(),
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      group: _selectedGroup,
+      status: 'invited',
+      attendingCount: _attendingCount,
     );
+
+    await context.read<GuestProvider>().addGuest(guest);
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.read<LanguageProvider>().t(
+                  '${_nameController.text} ചേർത്തു!',
+                  '${_nameController.text} added!',
+                ),
+          ),
+          backgroundColor: AppColors.green,
+        ),
+      );
+    }
   }
 
   @override

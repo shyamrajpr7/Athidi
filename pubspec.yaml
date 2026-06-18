@@ -24,6 +24,7 @@ dependencies:
   cloud_firestore: ^4.15.8
   firebase_storage: ^11.6.9
 
+
   # HTTP & API
   dio: ^5.4.1
 
@@ -44,6 +45,8 @@ dependencies:
 
   # Internationalisation
   intl: ^0.20.2
+  supabase_flutter: ^2.14.2
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:

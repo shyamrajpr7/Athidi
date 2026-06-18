@@ -1,8 +1,16 @@
-import 'package:athidhi/screens/host/guest_list_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:athidhi/constants/app_colors.dart';
-import 'package:athidhi/screens/host/invitation_screen.dart';
+import 'package:athidhi/providers/auth_provider.dart';
+import 'package:athidhi/providers/event_provider.dart';
+import 'package:athidhi/providers/guest_provider.dart';
+import 'package:athidhi/providers/language_provider.dart';
+import 'package:athidhi/screens/auth/login_screen.dart';
 import 'package:athidhi/screens/guest/guest_rsvp_screen.dart';
+import 'package:athidhi/screens/host/guest_list_screen.dart';
+import 'package:athidhi/screens/host/invitation_screen.dart';
+import 'package:athidhi/screens/host/event_setup_screen.dart';
+import 'package:athidhi/screens/host/add_guest_screen.dart';
 
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
@@ -12,35 +20,39 @@ class HostDashboard extends StatefulWidget {
 }
 
 class _HostDashboardState extends State<HostDashboard> {
-  bool _isMalayalam = true;
   int _selectedTab = 0;
 
-  // Sample data — real data comes from Firestore later
-  final int totalInvited = 847;
-  final int totalViewed = 612;
-  final int totalAccepted = 489;
-  final int totalDeclined = 34;
-
-  String get _greetingText =>
-      _isMalayalam ? 'നമസ്കാരം, ശ്യാംരാജ് 👋' : 'Hello, Shyamraj 👋';
-  String get _eventText =>
-      _isMalayalam ? 'വിവാഹം — 12 ദിവസം ബാക്കി' : 'Wedding — 12 days left';
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      final eventProvider = context.read<EventProvider>();
+      await eventProvider.loadEvent();
+      if (mounted && eventProvider.eventId != null) {
+        context.read<GuestProvider>().loadGuests(eventProvider.eventId!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final event = context.watch<EventProvider>();
+    final guests = context.watch<GuestProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildTabs(),
+            _buildHeader(lang, event, guests),
+            _buildTabs(lang),
             Expanded(
               child: _selectedTab == 0
-                  ? _buildOverview()
+                  ? _buildOverview(lang, guests)
                   : _selectedTab == 1
-                      ? _buildGuestList()
-                      : _buildInvitations(),
+                      ? GuestListScreen(isMalayalam: lang.isMalayalam)
+                      : InvitationScreen(isMalayalam: lang.isMalayalam),
             ),
           ],
         ),
@@ -55,9 +67,7 @@ class _HostDashboardState extends State<HostDashboard> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const GuestRsvpScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const GuestRsvpScreen()),
               );
             },
             child:
@@ -66,11 +76,18 @@ class _HostDashboardState extends State<HostDashboard> {
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             heroTag: 'add',
-            onPressed: () {},
+            onPressed: () {
+              if (event.eventId == null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EventSetupScreen()),
+                );
+              }
+            },
             backgroundColor: AppColors.primary,
             icon: const Icon(Icons.person_add, color: Colors.white),
             label: Text(
-              _isMalayalam ? 'അതിഥിയെ ചേർക്കുക' : 'Add Guest',
+              lang.t('അതിഥിയെ ചേർക്കുക', 'Add Guest'),
               style: const TextStyle(color: Colors.white),
             ),
           ),
@@ -79,7 +96,8 @@ class _HostDashboardState extends State<HostDashboard> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(
+      LanguageProvider lang, EventProvider event, GuestProvider guests) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: const BoxDecoration(
@@ -98,7 +116,7 @@ class _HostDashboardState extends State<HostDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _greetingText,
+                    lang.t('നമസ്കാരം 👋', 'Hello 👋'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -107,7 +125,9 @@ class _HostDashboardState extends State<HostDashboard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _eventText,
+                    event.status == EventStatus.loaded
+                        ? '${event.groomName} & ${event.brideName} · ${event.daysLeft} ${lang.t('ദിവസം ബാക്കി', 'days left')}'
+                        : lang.t('ഇവന്റ് സജ്ജമാക്കുക', 'Setup your event'),
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.85),
                       fontSize: 13,
@@ -117,9 +137,8 @@ class _HostDashboardState extends State<HostDashboard> {
               ),
               Row(
                 children: [
-                  // Language toggle
                   GestureDetector(
-                    onTap: () => setState(() => _isMalayalam = !_isMalayalam),
+                    onTap: () => lang.toggleLanguage(),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
@@ -129,46 +148,54 @@ class _HostDashboardState extends State<HostDashboard> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        _isMalayalam ? 'EN' : 'മല',
+                        lang.isMalayalam ? 'EN' : 'മല',
                         style:
                             const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Avatar
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    child: const Text('ശ്യാ',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold)),
+                  GestureDetector(
+                    onTap: () async {
+                      await context.read<AuthProvider>().signOut();
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      child: const Icon(Icons.person,
+                          color: Colors.white, size: 20),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 20),
-          // Stats row
           Row(
             children: [
               _buildStatCard(
-                _isMalayalam ? 'ക്ഷണിച്ചത്' : 'Invited',
-                totalInvited.toString(),
+                lang.t('ക്ഷണിച്ചത്', 'Invited'),
+                guests.totalInvited.toString(),
                 Icons.mail_outline,
               ),
               const SizedBox(width: 10),
               _buildStatCard(
-                _isMalayalam ? 'കണ്ടത്' : 'Viewed',
-                totalViewed.toString(),
+                lang.t('കണ്ടത്', 'Viewed'),
+                guests.totalViewed.toString(),
                 Icons.visibility_outlined,
               ),
               const SizedBox(width: 10),
               _buildStatCard(
-                _isMalayalam ? 'സ്ഥിരീകരിച്ചത്' : 'Confirmed',
-                totalAccepted.toString(),
+                lang.t('സ്ഥിരീകരിച്ചത്', 'Confirmed'),
+                guests.totalAccepted.toString(),
                 Icons.check_circle_outline,
               ),
             ],
@@ -213,11 +240,12 @@ class _HostDashboardState extends State<HostDashboard> {
     );
   }
 
-  Widget _buildTabs() {
-    final tabs = _isMalayalam
-        ? ['അവലോകനം', 'അതിഥികൾ', 'ക്ഷണങ്ങൾ']
-        : ['Overview', 'Guests', 'Invitations'];
-
+  Widget _buildTabs(LanguageProvider lang) {
+    final tabs = [
+      lang.t('അവലോകനം', 'Overview'),
+      lang.t('അതിഥികൾ', 'Guests'),
+      lang.t('ക്ഷണങ്ങൾ', 'Invitations'),
+    ];
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(4),
@@ -259,15 +287,13 @@ class _HostDashboardState extends State<HostDashboard> {
     );
   }
 
-  Widget _buildOverview() {
+  Widget _buildOverview(LanguageProvider lang, GuestProvider guests) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Progress bar
-          _buildSectionTitle(
-              _isMalayalam ? 'RSVP പ്രോഗ്രസ്സ്' : 'RSVP Progress'),
+          _buildSectionTitle(lang.t('RSVP പ്രോഗ്രസ്സ്', 'RSVP Progress')),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -279,42 +305,95 @@ class _HostDashboardState extends State<HostDashboard> {
             child: Column(
               children: [
                 _buildProgressRow(
-                  _isMalayalam ? 'സ്ഥിരീകരിച്ചത്' : 'Confirmed',
-                  totalAccepted,
-                  totalInvited,
+                  lang.t('സ്ഥിരീകരിച്ചത്', 'Confirmed'),
+                  guests.totalAccepted,
+                  guests.totalInvited,
                   AppColors.green,
                 ),
                 const SizedBox(height: 12),
                 _buildProgressRow(
-                  _isMalayalam ? 'കണ്ടത്' : 'Viewed',
-                  totalViewed,
-                  totalInvited,
+                  lang.t('കണ്ടത്', 'Viewed'),
+                  guests.totalViewed,
+                  guests.totalInvited,
                   AppColors.primary,
                 ),
                 const SizedBox(height: 12),
                 _buildProgressRow(
-                  _isMalayalam ? 'നിരസിച്ചത്' : 'Declined',
-                  totalDeclined,
-                  totalInvited,
+                  lang.t('നിരസിച്ചത്', 'Declined'),
+                  guests.totalDeclined,
+                  guests.totalInvited,
                   Colors.redAccent,
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // Pending VIP guests
-          _buildSectionTitle(_isMalayalam
-              ? 'പ്രധാന അതിഥികൾ — RSVP ബാക്കി'
-              : 'Priority Guests — Pending RSVP'),
+          _buildSectionTitle(
+            lang.t('പ്രധാന അതിഥികൾ — RSVP ബാക്കി', 'Priority Guests — Pending'),
+          ),
           const SizedBox(height: 12),
-          ..._buildPriorityGuests(),
-
+          if (guests.priorityPendingGuests.isEmpty)
+            Center(
+              child: Text(
+                lang.t('എല്ലാ പ്രധാന അതിഥികളും RSVP ചെയ്തു ✅',
+                    'All priority guests have RSVP\'d ✅'),
+                style: const TextStyle(color: AppColors.green, fontSize: 13),
+              ),
+            )
+          else
+            ...guests.priorityPendingGuests.map((g) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Text(g.initials,
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(g.name,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 14)),
+                            Text(g.group,
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          lang.t('ബാക്കി', 'Pending'),
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
           const SizedBox(height: 20),
-
-          // Sadhya headcount
-          _buildSectionTitle(_isMalayalam ? 'സദ്യ എണ്ണം' : 'Sadhya Headcount'),
+          _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -328,7 +407,7 @@ class _HostDashboardState extends State<HostDashboard> {
                 const Text('🍌', style: TextStyle(fontSize: 32)),
                 const SizedBox(height: 8),
                 Text(
-                  totalAccepted.toString(),
+                  guests.totalHeadcount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 48,
@@ -336,7 +415,7 @@ class _HostDashboardState extends State<HostDashboard> {
                   ),
                 ),
                 Text(
-                  _isMalayalam ? 'പ്ലേറ്റ് ഒരുക്കേണ്ടത്' : 'plates to prepare',
+                  lang.t('പ്ലേറ്റ് ഒരുക്കേണ്ടത്', 'plates to prepare'),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.85),
                     fontSize: 14,
@@ -345,7 +424,6 @@ class _HostDashboardState extends State<HostDashboard> {
               ],
             ),
           ),
-
           const SizedBox(height: 80),
         ],
       ),
@@ -353,7 +431,7 @@ class _HostDashboardState extends State<HostDashboard> {
   }
 
   Widget _buildProgressRow(String label, int value, int total, Color color) {
-    final percent = value / total;
+    final percent = total > 0 ? value / total : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,7 +452,7 @@ class _HostDashboardState extends State<HostDashboard> {
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
-            value: percent,
+            value: percent.toDouble(),
             backgroundColor: AppColors.border,
             color: color,
             minHeight: 8,
@@ -382,85 +460,6 @@ class _HostDashboardState extends State<HostDashboard> {
         ),
       ],
     );
-  }
-
-  List<Widget> _buildPriorityGuests() {
-    final guests = [
-      {'name': 'Rajan Uncle', 'group': 'Close Family', 'status': 'pending'},
-      {'name': 'Meera Aunty', 'group': 'Close Family', 'status': 'pending'},
-      {'name': 'Dr. Suresh', 'group': 'VIP', 'status': 'viewed'},
-    ];
-    return guests.map((g) {
-      final isPending = g['status'] == 'pending';
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isPending ? Colors.orange.withOpacity(0.4) : AppColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Text(
-                g['name']![0],
-                style: const TextStyle(
-                    color: AppColors.primary, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(g['name']!,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
-                  Text(g['group']!,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted)),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isPending
-                    ? Colors.orange.withOpacity(0.1)
-                    : AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                isPending
-                    ? (_isMalayalam ? 'ബാക്കി' : 'Pending')
-                    : (_isMalayalam ? 'കണ്ടു' : 'Viewed'),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isPending ? Colors.orange : AppColors.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.send, size: 18, color: AppColors.primary),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildGuestList() {
-    return GuestListScreen(isMalayalam: _isMalayalam);
-  }
-
-  Widget _buildInvitations() {
-    return InvitationScreen(isMalayalam: _isMalayalam);
   }
 
   Widget _buildSectionTitle(String title) {

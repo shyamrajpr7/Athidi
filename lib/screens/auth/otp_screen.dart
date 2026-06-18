@@ -1,16 +1,12 @@
-import 'package:athidhi/screens/host/host_dashboard.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:athidhi/constants/app_colors.dart';
+import 'package:athidhi/providers/auth_provider.dart';
+import 'package:athidhi/providers/language_provider.dart';
+import 'package:athidhi/screens/host/host_dashboard.dart';
 
 class OtpScreen extends StatefulWidget {
-  final String phoneNumber;
-  final bool isMalayalam;
-
-  const OtpScreen({
-    super.key,
-    required this.phoneNumber,
-    required this.isMalayalam,
-  });
+  const OtpScreen({super.key});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -20,23 +16,13 @@ class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  bool _isLoading = false;
   int _resendSeconds = 30;
   bool _canResend = false;
-
-  String get _title => widget.isMalayalam ? 'കോഡ് നൽകുക' : 'Enter OTP';
-  String get _subtitle => widget.isMalayalam
-      ? '+91 ${widget.phoneNumber} എന്ന നമ്പരിലേക്ക് OTP അയച്ചു'
-      : 'OTP sent to +91 ${widget.phoneNumber}';
-  String get _verifyText => widget.isMalayalam ? 'സ്ഥിരീകരിക്കുക' : 'Verify';
-  String get _resendText =>
-      widget.isMalayalam ? 'വീണ്ടും അയക്കുക' : 'Resend OTP';
 
   @override
   void initState() {
     super.initState();
     _startResendTimer();
-    // Auto focus first box
     Future.delayed(const Duration(milliseconds: 300), () {
       _focusNodes[0].requestFocus();
     });
@@ -63,13 +49,16 @@ class _OtpScreenState extends State<OtpScreen> {
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
-    // Auto verify when all 6 digits filled
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length == 6) _handleVerify();
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final auth = context.watch<AuthProvider>();
+    final isLoading = auth.status == AuthStatus.loading;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -88,42 +77,41 @@ class _OtpScreenState extends State<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              // Title
               Text(
-                _title,
+                lang.t('കോഡ് നൽകുക', 'Enter OTP'),
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
               ),
-
               const SizedBox(height: 10),
-
               Text(
-                _subtitle,
+                lang.t(
+                  '+91 ${auth.phoneNumber} എന്ന നമ്പരിലേക്ക് OTP അയച്ചു',
+                  'OTP sent to +91 ${auth.phoneNumber}',
+                ),
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textMuted,
                 ),
               ),
-
               const SizedBox(height: 48),
-
-              // OTP boxes
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (i) => _buildOtpBox(i)),
               ),
-
-              const SizedBox(height: 40),
-
-              // Verify button
+              const SizedBox(height: 16),
+              if (auth.status == AuthStatus.error)
+                Text(
+                  auth.errorMessage,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                ),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleVerify,
+                  onPressed: isLoading ? null : _handleVerify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -133,7 +121,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoading
+                  child: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -143,7 +131,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         )
                       : Text(
-                          _verifyText,
+                          lang.t('സ്ഥിരീകരിക്കുക', 'Verify'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -151,16 +139,18 @@ class _OtpScreenState extends State<OtpScreen> {
                         ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Resend
               Center(
                 child: _canResend
                     ? GestureDetector(
-                        onTap: _startResendTimer,
+                        onTap: () {
+                          context
+                              .read<AuthProvider>()
+                              .sendOtp(auth.phoneNumber);
+                          _startResendTimer();
+                        },
                         child: Text(
-                          _resendText,
+                          lang.t('വീണ്ടും അയക്കുക', 'Resend OTP'),
                           style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
@@ -169,9 +159,10 @@ class _OtpScreenState extends State<OtpScreen> {
                         ),
                       )
                     : Text(
-                        widget.isMalayalam
-                            ? '$_resendSeconds സെക്കൻഡിൽ വീണ്ടും അയക്കാം'
-                            : 'Resend in $_resendSeconds seconds',
+                        lang.t(
+                          '$_resendSeconds സെക്കൻഡിൽ വീണ്ടും അയക്കാം',
+                          'Resend in $_resendSeconds seconds',
+                        ),
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 13,
@@ -218,32 +209,18 @@ class _OtpScreenState extends State<OtpScreen> {
     );
   }
 
-  void _handleVerify() {
+  void _handleVerify() async {
     final otp = _controllers.map((c) => c.text).join();
-    if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isMalayalam
-                ? '6 അക്ക OTP നൽകുക'
-                : 'Please enter 6-digit OTP',
-          ),
-          backgroundColor: AppColors.primary,
-        ),
+    if (otp.length < 6) return;
+
+    final success = await context.read<AuthProvider>().verifyOtp(otp);
+    if (mounted && success) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HostDashboard()),
+        (route) => false,
       );
-      return;
     }
-    setState(() => _isLoading = true);
-    // Firebase OTP verification comes later
-   Future.delayed(const Duration(seconds: 2), () {
-  if (mounted) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HostDashboard()),
-      (route) => false,
-    );
-  }
-});
   }
 
   @override
