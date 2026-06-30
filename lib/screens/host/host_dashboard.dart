@@ -12,7 +12,8 @@ import 'package:athidhi/screens/host/invitation_screen.dart';
 import 'package:athidhi/screens/host/event_setup_screen.dart';
 import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 import 'package:athidhi/screens/host/reminder_screen.dart';
-
+import 'package:athidhi/screens/host/stream_management_screen.dart';
+import 'package:athidhi/providers/livestream_provider.dart';
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
 
@@ -396,6 +397,8 @@ class _HostDashboardState extends State<HostDashboard> {
           const SizedBox(height: 20),
           _buildReminderCard(lang, guests),
           const SizedBox(height: 12),
+          _buildStreamCard(lang, event),
+          const SizedBox(height: 12),
           _buildMemoryWallCard(lang, event),
           const SizedBox(height: 20),
           _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
@@ -464,6 +467,86 @@ class _HostDashboardState extends State<HostDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStreamCard(LanguageProvider lang, EventProvider event) {
+    final stream = context.watch<LivestreamProvider>();
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => const StreamManagementScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: stream.isLive
+                ? Colors.red.withValues(alpha: 0.3)
+                : AppColors.border,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: stream.isLive
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                stream.isLive
+                    ? Icons.fiber_manual_record
+                    : Icons.live_tv_outlined,
+                color: stream.isLive ? Colors.red : AppColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stream.isLive
+                        ? lang.t('തത്സമയ സംപ്രേഷണം', 'Live Streaming')
+                        : lang.t('തത്സമയ സംപ്രേഷണം', 'Live Stream'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    stream.isLive
+                        ? lang.t('തത്സമയ സംപ്രേഷണം നടക്കുന്നു 🔴',
+                            'Currently live 🔴')
+                        : lang.t(
+                            'സ്ട്രീം സജ്ജമാക്കുക', 'Configure stream'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: stream.isLive
+                          ? Colors.red
+                          : AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                color: AppColors.textMuted.withValues(alpha: 0.5),
+                size: 16),
+          ],
+        ),
+      ),
     );
   }
 

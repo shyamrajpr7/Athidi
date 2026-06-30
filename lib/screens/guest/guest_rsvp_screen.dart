@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:athidhi/constants/app_colors.dart';
+import 'package:athidhi/providers/event_provider.dart';
+import 'package:athidhi/screens/guest/live_telecast_screen.dart';
 import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 
 class GuestRsvpScreen extends StatefulWidget {
@@ -434,9 +437,21 @@ class _GuestRsvpScreenState extends State<GuestRsvpScreen>
           _buildOutlineButton(
             icon: Icons.live_tv_outlined,
             label: _isMalayalam
-                ? 'ലൈവ്സ്ട്രീം കാണുക'
-                : 'Watch Livestream',
-            onTap: _openLivestream,
+                ? 'തത്സമയം കാണുക 📺'
+                : 'Watch Live 📺',
+            onTap: () {
+              final event = context.read<EventProvider>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LiveTelecastScreen(
+                    eventId: event.eventId ?? 'preview',
+                    groomName: event.groomName,
+                    brideName: event.brideName,
+                  ),
+                ),
+              );
+            },
             fullWidth: true,
           ),
           const SizedBox(height: 10),
@@ -652,11 +667,6 @@ class _GuestRsvpScreenState extends State<GuestRsvpScreen>
   void _addToCalendar() async {
     final url = Uri.parse(
         'https://calendar.google.com/calendar/r/eventedit?text=Arjun+%26+Devika+Wedding&dates=20250315T050000Z/20250315T120000Z&location=$_venue');
-    if (await canLaunchUrl(url)) await launchUrl(url);
-  }
-
-  void _openLivestream() async {
-    final url = Uri.parse('https://youtube.com/live');
     if (await canLaunchUrl(url)) await launchUrl(url);
   }
 
