@@ -13,6 +13,7 @@ import 'package:athidhi/screens/host/event_setup_screen.dart';
 import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 import 'package:athidhi/screens/host/reminder_screen.dart';
 import 'package:athidhi/screens/host/stream_management_screen.dart';
+import 'package:athidhi/screens/microsite/host_microsite_screen.dart';
 import 'package:athidhi/providers/livestream_provider.dart';
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
@@ -400,6 +401,8 @@ class _HostDashboardState extends State<HostDashboard> {
           _buildStreamCard(lang, event),
           const SizedBox(height: 12),
           _buildMemoryWallCard(lang, event),
+          const SizedBox(height: 12),
+          _buildMicrositeCard(lang),
           const SizedBox(height: 20),
           _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
           const SizedBox(height: 12),
@@ -697,6 +700,72 @@ class _HostDashboardState extends State<HostDashboard> {
                     lang.t(
                       'വിവാഹ ഫോട്ടോകൾ കാണുകയും മോഡറേറ്റ് ചെയ്യുകയും ചെയ്യുക',
                       'View & moderate wedding photos',
+                    ),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                color: Colors.white.withValues(alpha: 0.6), size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMicrositeCard(LanguageProvider lang) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const HostMicrositeScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF6A1B9A),
+              Color(0xFF4A148C),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.language_outlined,
+                  color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lang.t('വിവാഹ മൈക്രോസൈറ്റ്', 'Wedding Microsite'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    lang.t(
+                      'വിവാഹ വിവരങ്ങൾ ഷെയർ ചെയ്യുക',
+                      'Share your wedding details',
                     ),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
