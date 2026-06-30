@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:athidhi/constants/app_colors.dart';
 import 'package:athidhi/models/guest_model.dart';
 import 'package:athidhi/providers/guest_provider.dart';
-import 'package:athidhi/providers/language_provider.dart';
+
 import 'package:athidhi/screens/host/add_guest_screen.dart';
 
 class GuestListScreen extends StatelessWidget {

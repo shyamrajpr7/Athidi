@@ -495,7 +495,7 @@ Please RSVP here 👇
     // Simulate sending one by one
     final selectedGuests =
         _guests.where((g) => _selected[g.id] == true).toList();
-    for (final guest in selectedGuests) {
+    for (final _ in selectedGuests) {
       await Future.delayed(const Duration(milliseconds: 400));
       if (mounted) setState(() => _sentCount++);
     }

@@ -10,7 +10,7 @@ import 'package:athidhi/screens/guest/guest_rsvp_screen.dart';
 import 'package:athidhi/screens/host/guest_list_screen.dart';
 import 'package:athidhi/screens/host/invitation_screen.dart';
 import 'package:athidhi/screens/host/event_setup_screen.dart';
-import 'package:athidhi/screens/host/add_guest_screen.dart';
+
 
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
