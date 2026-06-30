@@ -14,6 +14,7 @@ import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 import 'package:athidhi/screens/host/reminder_screen.dart';
 import 'package:athidhi/screens/host/stream_management_screen.dart';
 import 'package:athidhi/screens/microsite/host_microsite_screen.dart';
+import 'package:athidhi/screens/host/seating_chart_screen.dart';
 import 'package:athidhi/providers/livestream_provider.dart';
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
@@ -403,6 +404,8 @@ class _HostDashboardState extends State<HostDashboard> {
           _buildMemoryWallCard(lang, event),
           const SizedBox(height: 12),
           _buildMicrositeCard(lang),
+          const SizedBox(height: 12),
+          _buildSeatingCard(lang),
           const SizedBox(height: 20),
           _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
           const SizedBox(height: 12),
@@ -777,6 +780,64 @@ class _HostDashboardState extends State<HostDashboard> {
             ),
             Icon(Icons.arrow_forward_ios,
                 color: Colors.white.withValues(alpha: 0.6), size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeatingCard(LanguageProvider lang) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SeatingChartScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.event_seat_outlined,
+                  color: Colors.teal, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lang.t('സീറ്റിംഗ് ചാർട്ട്', 'Seating Chart'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    lang.t(
+                      'മേശകൾ സൃഷ്ടിച്ച് അതിഥികളെ നിയോഗിക്കുക',
+                      'Create tables & assign guests',
+                    ),
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                color: AppColors.textMuted.withValues(alpha: 0.5), size: 16),
           ],
         ),
       ),

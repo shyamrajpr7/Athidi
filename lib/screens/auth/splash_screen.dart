@@ -1,6 +1,6 @@
-import 'package:athidhi/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:athidhi/constants/app_colors.dart';
+import 'package:athidhi/screens/host/host_dashboard.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const HostDashboard()),
         );
       }
     });
