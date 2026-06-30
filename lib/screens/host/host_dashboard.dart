@@ -10,7 +10,7 @@ import 'package:athidhi/screens/guest/guest_rsvp_screen.dart';
 import 'package:athidhi/screens/host/guest_list_screen.dart';
 import 'package:athidhi/screens/host/invitation_screen.dart';
 import 'package:athidhi/screens/host/event_setup_screen.dart';
-
+import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
@@ -49,7 +49,7 @@ class _HostDashboardState extends State<HostDashboard> {
             _buildTabs(lang),
             Expanded(
               child: _selectedTab == 0
-                  ? _buildOverview(lang, guests)
+                  ? _buildOverview(lang, guests, event)
                   : _selectedTab == 1
                       ? GuestListScreen(isMalayalam: lang.isMalayalam)
                       : InvitationScreen(isMalayalam: lang.isMalayalam),
@@ -287,7 +287,7 @@ class _HostDashboardState extends State<HostDashboard> {
     );
   }
 
-  Widget _buildOverview(LanguageProvider lang, GuestProvider guests) {
+  Widget _buildOverview(LanguageProvider lang, GuestProvider guests, EventProvider event) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -393,6 +393,8 @@ class _HostDashboardState extends State<HostDashboard> {
                   ),
                 )),
           const SizedBox(height: 20),
+          _buildMemoryWallCard(lang, event),
+          const SizedBox(height: 20),
           _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
           const SizedBox(height: 12),
           Container(
@@ -459,6 +461,81 @@ class _HostDashboardState extends State<HostDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMemoryWallCard(LanguageProvider lang, EventProvider event) {
+    return GestureDetector(
+      onTap: () {
+        if (event.eventId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MemoryWallScreen(
+                eventId: event.eventId!,
+                isHost: true,
+              ),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary,
+              AppColors.primaryDark,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.photo_library_outlined,
+                  color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lang.t('മെമ്മറി വാൾ', 'Memory Wall'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    lang.t(
+                      'വിവാഹ ഫോട്ടോകൾ കാണുകയും മോഡറേറ്റ് ചെയ്യുകയും ചെയ്യുക',
+                      'View & moderate wedding photos',
+                    ),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                color: Colors.white.withValues(alpha: 0.6), size: 16),
+          ],
+        ),
+      ),
     );
   }
 

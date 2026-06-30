@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:athidhi/constants/app_colors.dart';
+import 'package:athidhi/screens/memory/memory_wall_screen.dart';
 
 class GuestRsvpScreen extends StatefulWidget {
   const GuestRsvpScreen({super.key});
@@ -436,6 +437,26 @@ class _GuestRsvpScreenState extends State<GuestRsvpScreen>
                 ? 'ലൈവ്സ്ട്രീം കാണുക'
                 : 'Watch Livestream',
             onTap: _openLivestream,
+            fullWidth: true,
+          ),
+          const SizedBox(height: 10),
+          // Memory Wall
+          _buildOutlineButton(
+            icon: Icons.photo_library_outlined,
+            label: _isMalayalam
+                ? 'മെമ്മറി വാൾ കാണുക'
+                : 'Memory Wall',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MemoryWallScreen(
+                    eventId: 'preview',
+                    isHost: false,
+                  ),
+                ),
+              );
+            },
             fullWidth: true,
           ),
         ],
