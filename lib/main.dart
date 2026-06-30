@@ -8,6 +8,7 @@ import 'package:athidhi/providers/event_provider.dart';
 import 'package:athidhi/providers/guest_provider.dart';
 import 'package:athidhi/providers/language_provider.dart';
 import 'package:athidhi/providers/photo_provider.dart';
+import 'package:athidhi/providers/reminder_provider.dart';
 import 'package:athidhi/screens/auth/splash_screen.dart';
 
 void main() async {
@@ -33,6 +34,7 @@ class AthidhiApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => GuestProvider()),
         ChangeNotifierProvider(create: (_) => PhotoProvider()),
+        ChangeNotifierProvider(create: (_) => ReminderProvider()),
       ],
       child: MaterialApp(
         title: 'Athidhi',

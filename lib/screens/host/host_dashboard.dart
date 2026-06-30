@@ -11,6 +11,7 @@ import 'package:athidhi/screens/host/guest_list_screen.dart';
 import 'package:athidhi/screens/host/invitation_screen.dart';
 import 'package:athidhi/screens/host/event_setup_screen.dart';
 import 'package:athidhi/screens/memory/memory_wall_screen.dart';
+import 'package:athidhi/screens/host/reminder_screen.dart';
 
 class HostDashboard extends StatefulWidget {
   const HostDashboard({super.key});
@@ -393,6 +394,8 @@ class _HostDashboardState extends State<HostDashboard> {
                   ),
                 )),
           const SizedBox(height: 20),
+          _buildReminderCard(lang, guests),
+          const SizedBox(height: 12),
           _buildMemoryWallCard(lang, event),
           const SizedBox(height: 20),
           _buildSectionTitle(lang.t('സദ്യ എണ്ണം', 'Sadhya Headcount')),
@@ -461,6 +464,95 @@ class _HostDashboardState extends State<HostDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildReminderCard(LanguageProvider lang, GuestProvider guests) {
+    final pending = guests.guests
+        .where((g) => g.status != 'accepted' && g.status != 'declined')
+        .length;
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ReminderScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.notifications_active_outlined,
+                  color: Colors.orange, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lang.t('RSVP ഓർമ്മപ്പെടുത്തലുകൾ', 'RSVP Reminders'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    pending > 0
+                        ? lang.t(
+                            '$pending പേർ ഇതുവരെ RSVP ചെയ്തിട്ടില്ല',
+                            '$pending guests haven\'t RSVP\'d',
+                          )
+                        : lang.t(
+                            'എല്ലാവരും RSVP ചെയ്തു ✅',
+                            'Everyone RSVP\'d ✅',
+                          ),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: pending > 0
+                          ? Colors.orange
+                          : AppColors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (pending > 0)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$pending',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios,
+                color: AppColors.textMuted.withValues(alpha: 0.5), size: 16),
+          ],
+        ),
+      ),
     );
   }
 
